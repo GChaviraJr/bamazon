@@ -1,5 +1,5 @@
 const mysql = require("mysql")
-const inquirer = require("inquirer")
+const inquirer = require("inquirer") 
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -12,6 +12,7 @@ const connection = mysql.createConnection({
 
 connection.connect(function(err) {
   if (err) throw err
+  console.log("Connection Complete")
   queryUserAction();
 });
 
@@ -25,11 +26,13 @@ function queryUserAction() {
   }).then(function(response) {
     switch (response.action) {
     case "BUY":
-      return purchaseItem();
+      console.log("starting purchaseItem function")
+      return purchaseItem()
     case "ADD_ITEM":
-      return newProduct();
+    console.log("starting newProduct function")
+      return newProduct()
     case "QUIT":
-      return process.exit();
+      return process.exit()
     }
   });
 }
@@ -38,11 +41,11 @@ function queryUserAction() {
 function newProduct() {
   inquirer.prompt([{
     message: "What is the item you would like to add?",
-    name: "item_name",
+    name: "product_name",
     type: "input"
   }, {
     message: "What department would your item be placed in?",
-    name: "department",
+    name: "department_name",
     type: "input"
   }, {
     message: "What is the price of the product?",
@@ -51,7 +54,7 @@ function newProduct() {
     validate(value) { return isNaN(value) === false; }
   }, {
       message: "What is the stock quantity of the product?",
-      name: "stock",
+      name: "stock_quantity",
       type: "input",
       validate(value) { return isNaN(value) === false; }
   }]).then(function(answers) {
@@ -59,8 +62,8 @@ function newProduct() {
     connection.query("INSERT INTO products SET ?", answers, function(error) {
       if (error) throw error;
 
-      console.log("Your item was added successfully!");
-      queryUserAction();
+      console.log("Your item was added successfully!")
+      queryUserAction()
     });
   });
 }
@@ -68,35 +71,40 @@ function newProduct() {
 function purchaseItem() {
   connection.query("SELECT * FROM products", function(err, results) {
     if (err) throw err;
-
+    console.log(results)
+    
     inquirer.prompt([{
-      choices() { return results.map(result => result.item_name || result.item_id); },
-      message: "What item would you like to purchase?",
-      name: "choice",
-      type: "rawlist"
+      message: "What item would you like to purchase? Please Enter the item number.",
+      name: "item_id",
+      type: "input",
+      validate(value) { return isNaN(value) === false; }
     }, {
       message: "How many of the selected item would you like to purchase?",
-      name: "quantity",
-      type: "input"
+      name: "stock_quantity",
+      type: "input",
+      validate(value) { return isNaN(value) === false; }
     }]).then(function(answers) {
-      var chosenItem = results.find(function(result) {
-        return result.item_name === answers.choice;
-      });
-
-      if (chosenItem.stock_quantity < parseInt(answers.quantity)) {
-        connection.query("UPDATE auctions SET ? WHERE ?", [
-          { stock_quantity: answers.quantity },
+      var chosenItem;
+        for (var i = 0; i < results.length; i++) {
+          if (results[i].product_name === answers.item_id) {
+            chosenItem = results[i];
+          }
+        }
+      if (results.stock_quantity < parseInt(answers.stock_quantity)) {
+        connection.query("UPDATE products SET ? WHERE ?", [
+          { stock_quantity: chosenItem.stock_quantity },
           { item_id: chosenItem.item_id }
         ],
         function(error) {
           if (error) throw err;
-          console.log("Thank you for your order!");
-          queryUserAction();
+          console.log("Not enought stock to purchase, please try again...");
+          queryUserAction()
         });
       } else {
-        console.log("Not enought stock to purchase, please try again...");
-        queryUserAction();
+        console.log("Your order total costs" + chosenItem.price + "." +
+        "Thank you for your order!")
+        queryUserAction()
       }
-    });
-  });
+    })
+  })
 }
