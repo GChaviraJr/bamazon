@@ -1,5 +1,5 @@
 const mysql = require("mysql")
-const inquirer = require("inquirer") 
+const inquirer = require("inquirer")
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -10,7 +10,7 @@ const connection = mysql.createConnection({
 })
 
 
-connection.connect(function(err) {
+connection.connect(function (err) {
   if (err) throw err
   console.log("Connection Complete")
   queryUserAction();
@@ -23,16 +23,16 @@ function queryUserAction() {
     type: "rawlist",
     message: "What would you like to do?",
     choices: ["BUY", "ADD_ITEM", "QUIT"]
-  }).then(function(response) {
+  }).then(function (response) {
     switch (response.action) {
-    case "BUY":
-      console.log("starting purchaseItem function")
-      return purchaseItem()
-    case "ADD_ITEM":
-    console.log("starting newProduct function")
-      return newProduct()
-    case "QUIT":
-      return process.exit()
+      case "BUY":
+        console.log("starting purchaseItem function")
+        return purchaseItem()
+      case "ADD_ITEM":
+        console.log("starting newProduct function")
+        return newProduct()
+      case "QUIT":
+        return process.exit()
     }
   });
 }
@@ -51,15 +51,19 @@ function newProduct() {
     message: "What is the price of the product?",
     name: "price",
     type: "input",
-    validate(value) { return isNaN(value) === false; }
+    validate(value) {
+      return isNaN(value) === false;
+    }
   }, {
-      message: "What is the stock quantity of the product?",
-      name: "stock_quantity",
-      type: "input",
-      validate(value) { return isNaN(value) === false; }
-  }]).then(function(answers) {
+    message: "What is the stock quantity of the product?",
+    name: "stock_quantity",
+    type: "input",
+    validate(value) {
+      return isNaN(value) === false;
+    }
+  }]).then(function (answers) {
 
-    connection.query("INSERT INTO products SET ?", answers, function(error) {
+    connection.query("INSERT INTO products SET ?", answers, function (error) {
       if (error) throw error;
 
       console.log("Your item was added successfully!")
@@ -68,42 +72,49 @@ function newProduct() {
   });
 }
 
+
 function purchaseItem() {
-  connection.query("SELECT * FROM products", function(err, results) {
-    if (err) throw err;
-    console.log(results)
-    
-    inquirer.prompt([{
-      message: "What item would you like to purchase? Please Enter the item number.",
-      name: "item_id",
-      type: "input",
-      validate(value) { return isNaN(value) === false; }
-    }, {
-      message: "How many of the selected item would you like to purchase?",
-      name: "stock_quantity",
-      type: "input",
-      validate(value) { return isNaN(value) === false; }
-    }]).then(function(answers) {
-      var chosenItem;
-        for (var i = 0; i < results.length; i++) {
-          if (results[i].product_name === answers.item_id) {
-            chosenItem = results[i];
-          }
-        }
-      if (results.stock_quantity < parseInt(answers.stock_quantity)) {
-        connection.query("UPDATE products SET ? WHERE ?", [
-          { stock_quantity: chosenItem.stock_quantity },
-          { item_id: chosenItem.item_id }
-        ],
-        function(error) {
-          if (error) throw err;
-          console.log("Not enought stock to purchase, please try again...");
-          queryUserAction()
-        });
+  inquirer.prompt([{
+    message: "What item would you like to purchase? Please Enter the item number.",
+    name: "item",
+    type: "input",
+    validate(value) {
+      return isNaN(value) === false;
+    }
+  }, {
+    message: "How many of the selected item would you like to purchase?",
+    name: "stock",
+    type: "input",
+    validate(value) {
+      return isNaN(value) === false;
+    }
+  }]).then(function (answers) {
+    connection.query("SELECT item_id,product_name,price,stock_quantity FROM products WHERE ?", {
+      item_id: answers.item
+    }, function (err, results) {
+      if (parseInt(answers.stock) > results[0].stock_quantity) {
+        console.log("sorry, there are only " + results[0].stock_quantity + " left")
+        purchaseItem()
       } else {
-        console.log("Your order total costs" + chosenItem.price + "." +
-        "Thank you for your order!")
-        queryUserAction()
+        let total = results[0].price * answers.stock
+        console.log("Your purchase of " + answers.stock + " " + results[0].product_name + " total cost is: $ " + parseInt(total))
+        let quantityDiff = results[0].stock_quantity - answers.stock
+        console.log(quantityDiff)
+        connection.query(
+          "UPDATE products SET ? WHERE ?",
+          [{
+              stock_quantity: quantityDiff
+            },
+            {
+              item_id: answers.item
+            }
+          ],
+          function (error) {
+            if (error) throw err
+          })
+        console.log("Inventory updated. There are " + quantityDiff + " left"),
+          console.log(results),
+          queryUserAction()
       }
     })
   })
