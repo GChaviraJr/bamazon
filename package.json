@@ -1,0 +1,23 @@
+{
+  "name": "bamazon",
+  "version": "1.0.0",
+  "description": "Amazon like app that runs in Node but uses MySQL.",
+  "main": "bamazonCustomer.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GChaviraJr/bamazon.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GChaviraJr/bamazon/issues"
+  },
+  "homepage": "https://github.com/GChaviraJr/bamazon#readme",
+  "dependencies": {
+    "mysql": "^2.16.0"
+  }
+}
