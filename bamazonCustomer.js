@@ -25,25 +25,24 @@ connection.connect(function(err) {
 // function which prompts the user for what action they should take
 function start() {
   inquirer
-    .prompt({
-      name: "postOrBid",
-      type: "rawlist",
-      message: "Would you like to [POST] an auction or [BID] on an auction?",
-      choices: ["POST", "BID"]
-    })
-    .then(function(answer) {
-      // based on their answer, either call the bid or the post functions
-      if (answer.postOrBid.toUpperCase() === "POST") {
-        postAuction();
-      }
-      else {
-        bidAuction();
-      }
+  .prompt({
+    name: "purchaseOrAddItem",
+    type: "rawlist",
+    message: "Would you like to purchase a product or would you like to add a product?",
+    choices: ["Purchase", "Add Item"]
+  })
+  .then(function(answer) {
+    if (answer.purchaseOrAddItem === "Purchase") {
+      purchaseItem();
+    }
+    else {
+      newProduct();
+    }
     });
 }
 
 // function to handle posting new items up for auction
-function postAuction() {
+function newProduct() {
   // prompt for info about the item being put up for auction
   inquirer
     .prompt([
@@ -53,14 +52,14 @@ function postAuction() {
         message: "What is the item you would like to submit?"
       },
       {
-        name: "category",
+        name: "department",
         type: "input",
-        message: "What category would you like to place your auction in?"
+        message: "What department does the product belong in?"
       },
       {
-        name: "startingBid",
+        name: "quantity",
         type: "input",
-        message: "What would you like your starting bid to be?",
+        message: "What is the quantity of the product?",
         validate: function(value) {
           if (isNaN(value) === false) {
             return true;
@@ -72,80 +71,78 @@ function postAuction() {
     .then(function(answer) {
       // when finished prompting, insert a new item into the db with that info
       connection.query(
-        "INSERT INTO auctions SET ?",
+        "INSERT INTO products SET ?",
         {
           item_name: answer.item,
-          category: answer.category,
-          starting_bid: answer.startingBid,
-          highest_bid: answer.startingBid
+          department: answer.department,
+          stock_quantity: answer.quantity,
         },
         function(err) {
           if (err) throw err;
-          console.log("Your auction was created successfully!");
-          // re-prompt the user for if they want to bid or post
+          console.log("Your items were added successfully!");
+          // re-prompt the user for if they want to add additional items
           start();
         }
       );
     });
 }
 
-function bidAuction() {
-  // query the database for all items being auctioned
-  connection.query("SELECT * FROM auctions", function(err, results) {
+function purchaseItem() {
+  // query the database for all items on sale
+  connection.query("SELECT * FROM products", function(err, results) {
     if (err) throw err;
-    // once you have the items, prompt the user for which they'd like to bid on
+    // once you have the items, prompt the user for which they'd like purchase
     inquirer
       .prompt([
         {
           name: "choice",
           type: "rawlist",
           choices: function() {
-            var choiceArray = [];
-            for (var i = 0; i < results.length; i++) {
-              choiceArray.push(results[i].item_name);
+            let choiceArray = [];
+            for (let i = 0; i < results.length; i++) {
+              choiceArray.push(results[i].item_id);
             }
             return choiceArray;
           },
-          message: "What auction would you like to place a bid in?"
+          message: "Which item would you like to purchase?"
         },
         {
-          name: "bid",
+          name: "stock",
           type: "input",
-          message: "How much would you like to bid?"
+          message: "How many would you like to purchase?"
         }
       ])
       .then(function(answer) {
         // get the information of the chosen item
-        var chosenItem;
-        for (var i = 0; i < results.length; i++) {
+        let chosenItem;
+        for (let i = 0; i < results.length; i++) {
           if (results[i].item_name === answer.choice) {
             chosenItem = results[i];
           }
         }
 
-        // determine if bid was high enough
-        if (chosenItem.highest_bid < parseInt(answer.bid)) {
-          // bid was high enough, so update db, let the user know, and start over
+        // determine if theres enough stock of the item
+        if (chosenItem.stock_quantity < parseInt(answer.stock_quantity)) {
+          // item has been chosen so update db, let the user know, and start over
           connection.query(
-            "UPDATE auctions SET ? WHERE ?",
+            "UPDATE products SET ? WHERE ?",
             [
               {
-                highest_bid: answer.bid
+                stock_quantity: answer.stock
               },
               {
-                id: chosenItem.id
+                item_id: chosenItem.item_id
               }
             ],
             function(error) {
               if (error) throw err;
-              console.log("Bid placed successfully!");
+              console.log("Your purchase is successful!");
               start();
             }
           );
         }
         else {
-          // bid wasn't high enough, so apologize and start over
-          console.log("Your bid was too low. Try again...");
+          console.log("The stock is too low, please try again...");
           start();
         }
       });
