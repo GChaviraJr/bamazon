@@ -3,148 +3,100 @@ const inquirer = require("inquirer")
 
 const connection = mysql.createConnection({
   host: "localhost",
-
-  // Your port; if not 3306
   port: 3306,
-
-  // Your username
   user: "root",
-
-  // Your password
   password: "Sb1598951",
   database: "bamazon"
 })
 
-// connect to the mysql server and sql database
+
 connection.connect(function(err) {
-  if (err) throw err;
-  // run the start function after the connection is made to prompt the user
-  start();
+  if (err) throw err
+  queryUserAction();
 });
 
 // function which prompts the user for what action they should take
-function start() {
-  inquirer
-  .prompt({
-    name: "purchaseOrAddItem",
+function queryUserAction() {
+  inquirer.prompt({
+    name: "action",
     type: "rawlist",
-    message: "Would you like to purchase a product or would you like to add a product?",
-    choices: ["Purchase", "Add Item"]
-  })
-  .then(function(answer) {
-    if (answer.purchaseOrAddItem === "Purchase") {
-      purchaseItem();
+    message: "What would you like to do?",
+    choices: ["BUY", "ADD_ITEM", "QUIT"]
+  }).then(function(response) {
+    switch (response.action) {
+    case "BUY":
+      return purchaseItem();
+    case "ADD_ITEM":
+      return newProduct();
+    case "QUIT":
+      return process.exit();
     }
-    else {
-      newProduct();
-    }
-    });
+  });
 }
 
-// function to handle posting new items up for auction
+
 function newProduct() {
-  // prompt for info about the item being put up for auction
-  inquirer
-    .prompt([
-      {
-        name: "item",
-        type: "input",
-        message: "What is the item you would like to submit?"
-      },
-      {
-        name: "department",
-        type: "input",
-        message: "What department does the product belong in?"
-      },
-      {
-        name: "quantity",
-        type: "input",
-        message: "What is the quantity of the product?",
-        validate: function(value) {
-          if (isNaN(value) === false) {
-            return true;
-          }
-          return false;
-        }
-      }
-    ])
-    .then(function(answer) {
-      // when finished prompting, insert a new item into the db with that info
-      connection.query(
-        "INSERT INTO products SET ?",
-        {
-          item_name: answer.item,
-          department: answer.department,
-          stock_quantity: answer.quantity,
-        },
-        function(err) {
-          if (err) throw err;
-          console.log("Your items were added successfully!");
-          // re-prompt the user for if they want to add additional items
-          start();
-        }
-      );
+  inquirer.prompt([{
+    message: "What is the item you would like to add?",
+    name: "item_name",
+    type: "input"
+  }, {
+    message: "What department would your item be placed in?",
+    name: "department",
+    type: "input"
+  }, {
+    message: "What is the price of the product?",
+    name: "price",
+    type: "input",
+    validate(value) { return isNaN(value) === false; }
+  }, {
+      message: "What is the stock quantity of the product?",
+      name: "stock",
+      type: "input",
+      validate(value) { return isNaN(value) === false; }
+  }]).then(function(answers) {
+
+    connection.query("INSERT INTO products SET ?", answers, function(error) {
+      if (error) throw error;
+
+      console.log("Your item was added successfully!");
+      queryUserAction();
     });
+  });
 }
 
 function purchaseItem() {
-  // query the database for all items on sale
   connection.query("SELECT * FROM products", function(err, results) {
     if (err) throw err;
-    // once you have the items, prompt the user for which they'd like purchase
-    inquirer
-      .prompt([
-        {
-          name: "choice",
-          type: "rawlist",
-          choices: function() {
-            let choiceArray = [];
-            for (let i = 0; i < results.length; i++) {
-              choiceArray.push(results[i].item_id);
-            }
-            return choiceArray;
-          },
-          message: "Which item would you like to purchase?"
-        },
-        {
-          name: "stock",
-          type: "input",
-          message: "How many would you like to purchase?"
-        }
-      ])
-      .then(function(answer) {
-        // get the information of the chosen item
-        let chosenItem;
-        for (let i = 0; i < results.length; i++) {
-          if (results[i].item_name === answer.choice) {
-            chosenItem = results[i];
-          }
-        }
 
-        // determine if theres enough stock of the item
-        if (chosenItem.stock_quantity < parseInt(answer.stock_quantity)) {
-          // item has been chosen so update db, let the user know, and start over
-          connection.query(
-            "UPDATE products SET ? WHERE ?",
-            [
-              {
-                stock_quantity: answer.stock
-              },
-              {
-                item_id: chosenItem.item_id
-              }
-            ],
-            function(error) {
-              if (error) throw err;
-              console.log("Your purchase is successful!");
-              start();
-            }
-          );
-        }
-        else {
-          console.log("The stock is too low, please try again...");
-          start();
-        }
+    inquirer.prompt([{
+      choices() { return results.map(result => result.item_name || result.item_id); },
+      message: "What item would you like to purchase?",
+      name: "choice",
+      type: "rawlist"
+    }, {
+      message: "How many of the selected item would you like to purchase?",
+      name: "quantity",
+      type: "input"
+    }]).then(function(answers) {
+      var chosenItem = results.find(function(result) {
+        return result.item_name === answers.choice;
       });
+
+      if (chosenItem.stock_quantity < parseInt(answers.quantity)) {
+        connection.query("UPDATE auctions SET ? WHERE ?", [
+          { stock_quantity: answers.quantity },
+          { item_id: chosenItem.item_id }
+        ],
+        function(error) {
+          if (error) throw err;
+          console.log("Thank you for your order!");
+          queryUserAction();
+        });
+      } else {
+        console.log("Not enought stock to purchase, please try again...");
+        queryUserAction();
+      }
+    });
   });
 }
