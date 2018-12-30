@@ -58,9 +58,9 @@ function purchaseItem() {
         console.log("sorry, there are only " + results[0].stock_quantity + " left")
         purchaseItem()
       } else {
-        let total = results[0].price * answers.stock
+        let total = parseInt(results[0].price) * parseInt(answers.stock)
         console.log("Your purchase of " + answers.stock + " " + results[0].product_name + " total cost is: $ " + parseInt(total))
-        let quantityDiff = results[0].stock_quantity - answers.stock
+        let quantityDiff = parseInt(results[0].stock_quantity) - parseInt(answers.stock)
         console.log(quantityDiff)
         connection.query(
           "UPDATE products SET ? WHERE ?",

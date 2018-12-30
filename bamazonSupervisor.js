@@ -1,5 +1,6 @@
 const mysql = require("mysql")
 const inquirer = require("inquirer")
+const cTable = require('console.table')
 
 const connection = mysql.createConnection({
     host: "localhost",
@@ -39,13 +40,51 @@ function querySupervisorAction() {
 }
 
 function viewDepartmentSales() {
-    connection.query("SELECT department_id,department_name,over_head_costs,product_sales FROM departments,products",
+    connection.query("SELECT products.*, departments.* FROM products, departments WHERE products.item_id = departments.department_id",
      function (err, res) {
             if (err) throw err
-            let totalProfit = parseInt(res[0].over_head_costs) - parseInt(res[0].product_sales)
-            let total = res[0].price * answers.stock
-            console.log(res)
+             let totalProfitE = parseInt(res[0].over_head_costs) - parseInt(res[0].product_sales)
+             let totalProfitC = parseInt(res[1].over_head_costs) - parseInt(res[1].product_sales)
+            let table = cTable.getTable([
+                {
+                    department_id: res[0].department_id,
+                    department_name: res[0].department_name,
+                    over_head_costs: res[0].over_head_costs,
+                    product_sales: res[0].product_sales,
+                    total_profit: totalProfitE
+                }, {
+                    department_id: res[1].department_id,
+                    department_name: res[1].department_name,
+                    over_head_costs: res[1].over_head_costs,
+                    product_sales: res[1].product_sales,
+                    total_profit: totalProfitC
+                }
+            ])
+            console.log(table)
             querySupervisorAction()
         }
     )
+}
+
+function addDepartment() {
+    inquirer.prompt([{
+        message: "What is the name of the new department?",
+        name: "department_name",
+        type: "input"
+    }, {
+        message: "What are the overhead costs of this department?",
+        name: "over_head_costs",
+        type: "input",
+        validate(value) {
+            return isNaN(value) === false
+        }
+    }]).then(function (answers) {
+
+        connection.query("INSERT INTO departments SET ?", answers, function (error) {
+            if (error) throw error;
+
+            console.log("The new department was added successfully!")
+            querySupervisorAction()
+        });
+    });
 }
