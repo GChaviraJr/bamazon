@@ -22,7 +22,7 @@ function queryUserAction() {
     name: "action",
     type: "rawlist",
     message: "What would you like to do?",
-    choices: ["BUY", "ADD_ITEM", "QUIT"]
+    choices: ["BUY", "QUIT"]
   }).then(function (response) {
     switch (response.action) {
       case "BUY":
@@ -83,4 +83,8 @@ function purchaseItem() {
       }
     })
   })
+}
+
+exports.queryUserAction = function() {
+  return queryUserAction()
 }

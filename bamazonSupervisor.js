@@ -88,3 +88,8 @@ function addDepartment() {
         });
     });
 }
+
+
+exports.querySupervisorAction = function() {
+    return querySupervisorAction()
+  }

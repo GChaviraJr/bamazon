@@ -138,3 +138,8 @@ function newProduct() {
         });
     });
 }
+
+
+exports.queryManagerAction = function() {
+    return queryManagerAction()
+  }
