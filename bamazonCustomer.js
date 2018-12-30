@@ -28,47 +28,9 @@ function queryUserAction() {
       case "BUY":
         console.log("starting purchaseItem function")
         return purchaseItem()
-      case "ADD_ITEM":
-        console.log("starting newProduct function")
-        return newProduct()
       case "QUIT":
         return process.exit()
     }
-  });
-}
-
-
-function newProduct() {
-  inquirer.prompt([{
-    message: "What is the item you would like to add?",
-    name: "product_name",
-    type: "input"
-  }, {
-    message: "What department would your item be placed in?",
-    name: "department_name",
-    type: "input"
-  }, {
-    message: "What is the price of the product?",
-    name: "price",
-    type: "input",
-    validate(value) {
-      return isNaN(value) === false;
-    }
-  }, {
-    message: "What is the stock quantity of the product?",
-    name: "stock_quantity",
-    type: "input",
-    validate(value) {
-      return isNaN(value) === false;
-    }
-  }]).then(function (answers) {
-
-    connection.query("INSERT INTO products SET ?", answers, function (error) {
-      if (error) throw error;
-
-      console.log("Your item was added successfully!")
-      queryUserAction()
-    });
   });
 }
 
@@ -89,7 +51,7 @@ function purchaseItem() {
       return isNaN(value) === false;
     }
   }]).then(function (answers) {
-    connection.query("SELECT item_id,product_name,price,stock_quantity FROM products WHERE ?", {
+    connection.query("SELECT item_id,product_name,price,stock_quantity,product_sales FROM products WHERE ?", {
       item_id: answers.item
     }, function (err, results) {
       if (parseInt(answers.stock) > results[0].stock_quantity) {
@@ -107,6 +69,9 @@ function purchaseItem() {
             },
             {
               item_id: answers.item
+            },
+            {
+              product_sales: total
             }
           ],
           function (error) {
