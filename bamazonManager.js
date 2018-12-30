@@ -9,11 +9,11 @@ const connection = mysql.createConnection({
     database: "bamazon"
 })
 
-connection.connect(function (err) {
-    if (err) throw err
-    console.log("Connection Complete")
-    queryManagerAction();
-  });
+// connection.connect(function (err) {
+//     if (err) throw err
+//     console.log("Connection Complete")
+//     queryManagerAction();
+//   });
 
 function queryManagerAction() {
     inquirer.prompt({

@@ -1,5 +1,6 @@
 const mysql = require("mysql")
 const inquirer = require("inquirer")
+const cTable = require('console.table')
 
 const connection = mysql.createConnection({
   host: "localhost",
@@ -9,12 +10,12 @@ const connection = mysql.createConnection({
   database: "bamazon"
 })
 
+// connection.connect(function (err) {
+//   if (err) throw err
+//   console.log("Connection Complete")
+//   queryUserAction();
+// });
 
-connection.connect(function (err) {
-  if (err) throw err
-  console.log("Connection Complete")
-  queryUserAction();
-});
 
 // function which prompts the user for what action they should take
 function queryUserAction() {
