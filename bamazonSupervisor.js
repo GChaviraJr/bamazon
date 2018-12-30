@@ -93,3 +93,9 @@ function addDepartment() {
 exports.querySupervisorAction = function() {
     return querySupervisorAction()
   }
+exports.viewDepartmentSales = function() {
+    return viewDepartmentSales()
+}
+exports.addDepartment = function() {
+    return addDepartment()
+}

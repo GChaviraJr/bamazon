@@ -143,3 +143,16 @@ function newProduct() {
 exports.queryManagerAction = function() {
     return queryManagerAction()
   }
+exports.viewProductsOnSale = function() {
+    return viewProductsOnSale()
+}
+exports.viewLowInventory = function() {
+    return viewLowInventory()
+}
+exports.addToInventory = function() {
+    return addToInventory()
+}
+exports.newProduct = function() {
+    return newProduct()
+}
+

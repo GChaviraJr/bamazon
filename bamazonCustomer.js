@@ -51,7 +51,7 @@ function purchaseItem() {
       return isNaN(value) === false;
     }
   }]).then(function (answers) {
-    connection.query("SELECT item_id,product_name,price,stock_quantity,product_sales FROM products WHERE ?", {
+    connection.query("SELECT item_id, product_name, price, stock_quantity, product_sales FROM products WHERE ?", {
       item_id: answers.item
     }, function (err, results) {
       if (parseInt(answers.stock) > results[0].stock_quantity) {
@@ -87,4 +87,8 @@ function purchaseItem() {
 
 exports.queryUserAction = function() {
   return queryUserAction()
+}
+
+exports.purchaseItem = function() {
+  return purchaseItem()
 }
